@@ -20,6 +20,10 @@
               android:orientation="vertical" >
 ```
 
+
+
+
 참조<br>
+<a>https://developer.android.com/reference/android/view/View
 <a>https://developer.android.com/guide/topics/ui/declaring-layout
 <a>https://developer.android.com/reference/android/widget/Button
