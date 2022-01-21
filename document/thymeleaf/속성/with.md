@@ -38,3 +38,7 @@ div th:with="firstPer=${persons[0]},secondPer=${persons[1]}">
 </p>
 
 ```
+
+
+참조
+https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html#local-variables
