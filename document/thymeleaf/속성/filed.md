@@ -16,11 +16,13 @@
 
 ```
  <input type="checkbox" th:field="*{name}" class="form-check-input">
+ <label th:for="${#ids.prev('name')}" class="form-check-label">
 ```
 
 추가로 checkbox 타입인 경우에는 th:feild를 사용한 경우에 \_필드이름의 hidden 타입을 추가로 만들어준다 (*chekbox 타입 특성상 check하지 않을 경우 null 값이 넘어갈 수 있는데
 이를 false로 처리해주기 위해 spring에서 사용하는 방식을 자동으로 코드 생성해줌)
 <br> 또한 value에 값이 있다면 checked 여부도 알아서 추가해준다.
+<br><br> **label에서 사용한 것과 같이 생성된 id값을 얻고 싶다면 #ids 유틸 클래스를 이용해서 ${#ids.prev('name')} 이와같은 방식으로 얻을 수 있다.**
 ```
 <input type="checkbox" class="form-check-input" id="name1" name="name" value="true">
 <input type="hidden" name="_name" value="on"/>
