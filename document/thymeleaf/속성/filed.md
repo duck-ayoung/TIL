@@ -22,7 +22,7 @@
 이를 false로 처리해주기 위해 spring에서 사용하는 방식을 자동으로 코드 생성해줌)
 <br> 또한 value에 값이 있다면 checked 여부도 알아서 추가해준다.
 ```
-<input type="checkbox" class="form-check-input" id="name" name="name" value="true">
+<input type="checkbox" class="form-check-input" id="name1" name="name" value="true">
 <input type="hidden" name="_name" value="on"/>
 ```
 
