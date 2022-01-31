@@ -61,7 +61,51 @@ public void addError(ObjectError error) {
   * defaultMessage : 오류 기본 메시지
   */
   ```
-2. 타입 오류 : Spring이 FiledError를 생성해서 BindingResult에 넣어줌<br>
+2. rejectValue(), reject()
+ 	- reject : Register a global error for the entire target object, using the given error description. <br> error description을 사용하여 target object에 대한 global error를 등록
+	- rejectValue : Register a field error for the specified field of the current object (respecting the current nested path, if any), using the given error description. <br>error discription을 사용하여 현재 object의 지정된 필드에 대하여 필드 오류를 등록한다.
+
+
+addError, rejectValue 쓸 때 예시
+```Java
+bindingResult.addError(new FieldError("item", "itemName", item.getItemName(), false, new String[]{"required.item.itemName"}, null, null));
+
+/**
+*1. bindingResult는 어떤 객체를 binding하는지 알 고 있기 때문에 객체 생략가능
+*2. propertyProcessor를 이용해서 rejectedValue도 자동으로 넣어주기 때문에 생략 가능
+*3. MessageCodeResolver를 이용해서 String 배열이 아닌 "required"만 입력 가능
+*/
+bindingResult.rejectValue("itemName", "required");
+
+
+AbstractBindingResult
+@Override
+public void rejectValue(@Nullable String field, String errorCode, @Nullable Object[] errorArgs,
+		@Nullable String defaultMessage) {
+
+	if (!StringUtils.hasLength(getNestedPath()) && !StringUtils.hasLength(field)) {
+		// We're at the top of the nested object hierarchy,
+		// so the present level is not a field but rather the top object.
+		// The best we can do is register a global error here...
+		reject(errorCode, errorArgs, defaultMessage);
+		return;
+	}
+
+	String fixedField = fixedField(field);
+	Object newVal = getActualFieldValue(fixedField);
+	FieldError fe = new FieldError(getObjectName(), fixedField, newVal, false,
+				resolveMessageCodes(errorCode, field), errorArgs, defaultMessage);
+	addError(fe);
+}
+
+@Override
+@Nullable
+protected Object getActualFieldValue(String field) {
+	return getPropertyAccessor().getPropertyValue(field);
+}
+```
+
+5. 타입 오류 : Spring이 FiledError를 생성해서 BindingResult에 넣어줌<br>
 예시) item 객체의 price 필드에 숫자가 아닌 문자를 넣었다.
 ```
 object 'item' on field 'price':
