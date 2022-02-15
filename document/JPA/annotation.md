@@ -19,3 +19,10 @@
 @MappedSuperclass
 > 공통 매핑 정보가 필요할 때 사용하는 annotation, table이 생성되는 것이 아니라 자식 클래스에 매핑 정보만 제공한다.
 > <br> 해당 annotation 을 부모 클래스에 선언해준다.
+
+연관관계 매핑
+1. @ManyToOne 
+2. @OneToMany
+3. @OneToOne
+4. 속성
+<br> fetch : FetchType 설정 (LAZY or EAGER)
