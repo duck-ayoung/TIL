@@ -26,3 +26,18 @@
 3. @OneToOne
 4. 속성
 <br> fetch : FetchType 설정 (LAZY or EAGER)
+
+<br> 값 타입
+<br> @Embeddable 
+> 값 타입을 정의하는 곳에 선언
+
+<br> @Embedded 
+> 값 타입을 사용하는 곳에 표시
+
+<br> @AttributeOverride
+> 한 엔티티에서 같은 값 타입을 사용할 때 표시(컬럼명의 재정의)
+
+<br> @ElementCollection
+> 값 타입의 컬렉션이 필요할 때 사용
+> <br> @CollectionTable을 사용해 테이블 명 
+> <br> 변경하면 추적이 어렵고, 변경이 발생하면 주인 엔티티와 관련된 모든 데이터를 삭제하고 다시 insert하기 때문에(값 타입 테이블은 명확한 PK가 없기 때문에 발생하는 일) **사용하면 안된다.**
