@@ -116,3 +116,59 @@ System.out.println("member.getTeam() = " + objects[2]);
     List<Member> resultList = em.createQuery("SELECT m From Member m where m.team = ANY (select t from Team t)", Member.class)
                         .getResultList();
     ```
+
+CASE 식
+
+```java
+List<String> resultList = em.createQuery("select "
+																							+ "case b.name "
+																								+ "when 'JPA' then '베스트셀러' " +
+															                    "else '일반도서' " +
+														                    "end " +
+			                    "from Book b", String.class).getResultList();
+```
+
+COALESCE : 하나씩 조회해서 null이 아니면 반환 null 이면 두번째 파라미터로 설정해준 값 반환
+
+```java
+List<String> resultList =
+        em.createQuery("select coalesce(b.name, '이름 없는 책') from Book b", String.class).getResultList();
+
+```
+
+JPQL 기본 함수
+
+- CONCAT, SUBSTRING, TRIM, LOWER, UPPER, LOCATE, ABS, SQRT, MOD, SIZE, INDEX ⇒  JPQL이 제공하는 표준함수, 데이터베이스에 관계없이 쓰면 된다.
+
+사용자 정의 함수 호출
+
+1. `Dialect` 만들기
+    - 내가 사용하는 diarect 를 상속받아 새로운 diarect를 만들어준다.
+    
+    ```java
+    public class MyH2Dialect extends H2Dialect {}
+    ```
+    
+2. 함수 등록하기
+    - 등록하고자하는 함수를 등록해준다, 등록하는 방법은 상속받은 diarect 클래스에서 참조하기
+    
+    ```java
+    public MyH2Dialect() {
+            registerFunction("group_concat", new StandardSQLFunction("group_concat", StandardBasicTypes.STRING));
+        }
+    ```
+    
+3. 설정을 바꾸어준다.
+    
+    ```java
+    //persistence.xml
+    <property name="hibernate.dialect" value="dialect.MyH2Dialect"/>
+    ```
+    
+4. 등록한 함수를 사용한다
+    
+    ```java
+    List<String> resultList =
+                        em.createQuery("select function('group_concat', b.name) from Book b", String.class).getResultList();
+    ```
+    
