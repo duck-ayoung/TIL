@@ -172,3 +172,151 @@ JPQL 기본 함수
                         em.createQuery("select function('group_concat', b.name) from Book b", String.class).getResultList();
     ```
     
+
+경로 표현식
+
+- .(점)을 찍어 객체 그래프를 탐색하는 것
+- 단일 값 연관 경로, 컬렉션 값 연관 경로의 경우 묵시적 내부 조인이 발생한다.
+
+```java
+//o.member 할 경우 내가 join을 명시적으로 선언하지 않았지만 join이 실행되는 걸 확인 할 수 있다.
+List<Member> resultList = em.createQuery("select o.member from Order o", Member.class).getResultList();
+
+/*
+Hibernate: 
+    // select
+        o.member 
+    from
+        
+    Order o // select
+        member1_.MEMBER_ID as MEMBER_I1_1_,
+        member1_.createdBy as createdB2_1_,
+        member1_.createdDateTime as createdD3_1_,
+        member1_.lastModifiedBy as lastModi4_1_,
+        member1_.lastModifiedDateTime as lastModi5_1_,
+        member1_.city as city6_1_,
+        member1_.name as name7_1_,
+        member1_.street as street8_1_,
+        member1_.zipcode as zipcode9_1_ from
+            ORDERS order0_ 
+        inner join
+            Member member1_ 
+                on order0_.MEMBER_ID=member1_.MEMBER_ID
+*/
+```
+
+- 묵시적으로 조인이 일어나기 때문에 코드만으로 조인이 일어나는 상황을 파악하기 힘들다
+- 자동으로 실행되기 때문에 성능 튜닝 하기 힘들다
+
+### fetch join
+
+- JPA에서만 사용할 수 있는 문법 (SQL 문법 아님)
+- JPQL에서 성능 최적화를 위해 제공하는 기능
+- 연관된 엔티티나 컬렉션을 SQL 한 번에 함께 조회하는 기능 ⇒ 성능 최적화 
+- fetch = FetchType.LAZY 로 설정해도 loop 돌면서 연견된 엔티티를 사용할 경우 N+1문제 여전히 발생한다.
+    
+    ```java
+    // fetch = FetchType.LAZY로 설정해도 loop 돌면서 연견된 엔티티를 사용할 경우 N+1문제 여전히 발생한다.
+    List<Order> orders = em.createQuery("select o from Order o", Order.class).getResultList();
+                
+    for (Order order : orders) {
+    	System.out.println("order = " + order.getId() +" member" + order.getMember());
+    }
+    ```
+    
+- 해결하는 방법은 fetch 조인을 사용하는 것 why? fetch 조인은 처음 쿼리를 날릴때 모두 함께 조회해버리고 영속성 컨텍스트에 캐싱하기 때문에 연관된 엔티티를 조회할 때마다 새로 다시 조회하지 않아도 됨
+
+```java
+List<Order> orders = em.createQuery("select o from Order o join fetch o.member", Order.class).getResultList();
+for (Order order : orders) {
+	System.out.println("order = " + order.getId() +" member" + order.getMember());
+}
+/*
+
+**Hibernate: 
+    // select
+        o 
+    from
+        
+    Order o join
+        fetch o.member // select
+            order0_.ORDER_ID as ORDER_ID1_3_0_,
+            member1_.MEMBER_ID as MEMBER_I1_1_1_,
+            order0_.createdBy as createdB2_3_0_,
+            order0_.createdDateTime as createdD3_3_0_,
+            order0_.lastModifiedBy as lastModi4_3_0_,
+            order0_.lastModifiedDateTime as lastModi5_3_0_,
+            order0_.MEMBER_ID as MEMBER_I8_3_0_,
+            order0_.orderDate as orderDat6_3_0_,
+            order0_.status as status7_3_0_,
+            member1_.createdBy as createdB2_1_1_,
+            member1_.createdDateTime as createdD3_1_1_,
+            member1_.lastModifiedBy as lastModi4_1_1_,
+            member1_.lastModifiedDateTime as lastModi5_1_1_,
+            member1_.city as city6_1_1_,
+            member1_.name as name7_1_1_,
+            member1_.street as street8_1_1_,
+            member1_.zipcode as zipcode9_1_1_ 
+        from
+            ORDERS order0_ 
+        inner join
+            Member member1_ 
+                on order0_.MEMBER_ID=member1_.MEMBER_ID
+
+*/**
+```
+
+Lazy 로 설정해도 만약에 검색한 member를 모두  loop 돌면서 멤버가 속한 팀을 조회한다면 
+
+- 주의 사항
+    1. 컬렉션을 fetch 조인하면 페이징 API를 사용할 수 없다. (데이터가 뻥튀기 되는 상황이 있기 때문에)
+    2. fetch 조인 대상에는 별칭을 줄 수 없다 (하이버네이트에서는 가능하지만 안되는 구현체가 있기 때문이 지양)
+    
+
+Type
+
+- 조회 대상을 특정 자식으로 한정
+
+```java
+Book book = new Book();
+book.setName("book1");
+em.persist(book);
+
+Movie movie = new Movie();
+movie.setName("movie1");
+em.persist(movie);
+
+em.flush();
+em.clear();
+
+List<Long> resultList =
+                    em.createQuery("select i.id from Item i where type(i) in (Book)", Long.class).getResultList();
+
+/*
+**Hibernate: 
+    //select
+        i.id 
+    from
+        Item i 
+    where
+        type(i) in (
+            Book
+        )// select
+            item0_.ITEM_ID as col_0_0_ 
+        from
+            Item item0_ 
+        where
+            item0_.DTYPE in (
+                'Book'
+            )**
+*/
+```
+
+TREAT
+
+- 상속 구조에서 부모 타입을 특정 자식 타입으로 다룰 때 사용
+
+```java
+List<Long> resultList =
+                    em.createQuery("select i.id from Item i where treat(i as Book).name = 'book1' ", Long.class).getResultList();
+```
