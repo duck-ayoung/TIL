@@ -1,5 +1,5 @@
 
-서블릿이 예외 처리를 지원하는 방식
+### 서블릿이 예외 처리를 지원하는 방식
 
 1. Exception
 2. response.sendError(HTTP 상태코드, 오류 메시지)
@@ -46,4 +46,31 @@ ErrorPage
 
 	public ErrorPage(Class<? extends Throwable> exception, String path) {
 	}
+```
+
+
+### 스프링 부트가 지원하는 방식
+* ErrorPage를 자동으로 등록한다. 이때 /error라는 경로로 기본 오류 페이지를 설정한다.
+* BasicErrorController라는 스프링 컨트롤러를 자동으로 등록한다.
+
+### BasicErrorController
+
+- Basic global error @Controller, rendering ErrorAttributes. More specific errors can be handled either using Spring MVC abstractions (e.g. @ExceptionHandler) or by adding servlet server error pages. ⇒ 기본 global error Controller
+- ErrorMvcAutoConfiguration에서 errorPage등록하고 BasicErrorController는 처리하는 controller
+
+```java
+//ErrorMvcAutoConfiguration
+@Override
+		public void registerErrorPages(ErrorPageRegistry errorPageRegistry) {
+			ErrorPage errorPage = new ErrorPage(
+					this.dispatcherServletPath.getRelativePath(this.properties.getError().getPath()));
+			errorPageRegistry.addErrorPages(errorPage);
+		}
+```
+
+```java
+@Controller
+@RequestMapping("${server.error.path:${error.path:/error}}")
+public class BasicErrorController extends AbstractErrorController {
+}
 ```
