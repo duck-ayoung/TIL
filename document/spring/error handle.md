@@ -74,3 +74,60 @@ ErrorPage
 public class BasicErrorController extends AbstractErrorController {
 }
 ```
+
+
+### API 오류 처리 방법
+
+1. error controller에서 JSON 데이터를 반환하여 처리
+    
+    ```java
+    @RequestMapping(value = "/error-page/500", produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseEntity<Map<String, Object>> errorPage500Api(HttpServletRequest request, HttpServletResponse response) {
+            log.info("API errorpage 500");
+    
+            Map<String, Object> result = new HashMap<>();
+            Exception ex = (Exception) request.getAttribute(ERROR_EXCEPTION);
+            result.put("status", request.getAttribute(ERROR_STATUS_CODE));
+            result.put("message", ex.getMessage());
+    
+            Integer statusCode = (Integer) request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+    
+            return new ResponseEntity<>(result, HttpStatus.valueOf(statusCode));
+        }
+    ```
+    
+    produce에 값을 지정하면 클라이언트가 요청하는 Accept가 지정한 값과 같으면 이 메서드가 호출된다. (따라서 지정하지 않은 같은 매핑주소를 가진 메서드는 그 이외의 상황에 불릴 것 이다.)
+    
+    RequestMapping - produce 
+    
+    - Narrows the primary mapping by media types that can be produced by the mapped handler. Consists of one or more media types one of which must be chosen via content negotiation against the "acceptable" media types of the request. Typically those are extracted from the "Accept" header but may be derived from query parameters, or other. <br>Examples:
+<br>    produces = "text/plain"
+<br>    produces = {"text/plain", "application/*"} //여러개 지정 가능
+<br>    produces = MediaType.TEXT_PLAIN_VALUE
+<br>    produces = "text/plain;charset=UTF-8"
+
+- Spring에서 제공하는 BasicErrorController에서의 처리 방식은?
+    
+    ```java
+    //MediaType.TEXT_HTML_VALUE 인 경우에 ModelAndView 반환
+    @RequestMapping(produces = MediaType.TEXT_HTML_VALUE)
+    	public ModelAndView errorHtml(HttpServletRequest request, HttpServletResponse response) {
+    		HttpStatus status = getStatus(request);
+    		Map<String, Object> model = Collections
+    				.unmodifiableMap(getErrorAttributes(request, getErrorAttributeOptions(request, MediaType.TEXT_HTML)));
+    		response.setStatus(status.value());
+    		ModelAndView modelAndView = resolveErrorView(request, response, status, model);
+    		return (modelAndView != null) ? modelAndView : new ModelAndView("error", model);
+    	}
+    
+    //그 외에는 JSON data로 반환
+    	@RequestMapping
+    	public ResponseEntity<Map<String, Object>> error(HttpServletRequest request) {
+    		HttpStatus status = getStatus(request);
+    		if (status == HttpStatus.NO_CONTENT) {
+    			return new ResponseEntity<>(status);
+    		}
+    		Map<String, Object> body = getErrorAttributes(request, getErrorAttributeOptions(request, MediaType.ALL));
+    		return new ResponseEntity<>(body, status);
+    	}
+    ```
